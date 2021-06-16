@@ -1,0 +1,51 @@
+Import('env')
+import subprocess
+
+def sys_exec(args):
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE)
+    (out, err) = proc.communicate()
+    return out.rstrip("\r\n").lstrip()
+
+module_env = env.Clone()
+module_env.add_source_files(env.modules_sources,"*.cpp")
+
+if env["platform"] == "windows":
+    env.Append(LIBS=[File('api/core/lib/x64/fmod_vc.lib'), File('api/studio/lib/x64/fmodstudio_vc.lib')])
+    if env["bits"] == "32":
+        env.Append(LIBPATH=["#modules/fmod/api/core/lib/x86/",
+                            "#modules/fmod/api/studio/lib/x86/"])
+    else:
+        env.Append(LIBPATH=["libs/"])
+elif env["platform"] == "x11":
+    env.Append(LIBS=["fmod", "fmodstudio"])
+    if env["bits"] == "32":
+        env.Append(
+            LIBPATH=["#modules/fmod/api/core/lib/x86/",
+                     "#modules/fmod/api/studio/lib/x86/"])
+    else:
+        env.Append(
+            LIBPATH=["#modules/fmod/api/core/lib/x86_64/",
+                     "#modules/fmod/api/studio/lib/x86_64/"])
+
+elif env["platform"] == "osx":
+    env.Append(LIBS=["fmod", "fmodstudio"])
+    env.Append(
+        LIBPATH=["#modules/fmod/api/core/lib/", "#modules/fmod/api/studio/lib/"])
+
+elif env["platform"] == "android":
+    if env["android_arch"] == "arm64v8":
+        env.Append(LIBPATH=["#modules/fmod/api/core/lib/arm64-v8a",
+                            "#modules/fmod/api/studio/lib/arm64-v8a"])
+    else:
+        env.Append(LIBPATH=["#modules/fmod/api/core/lib/armeabi-v7a",
+                            "#modules/fmod/api/studio/lib/armeabi-v7a"])
+    env.Append(LIBS=["fmod", "fmodstudio"])
+
+elif env["platform"] == "iphone":
+    env.Append(LIBPATH=["#modules/fmod/api/core/lib/", "#modules/fmod/api/studio/lib/"])
+    env.Append(LIBS=["libfmod_iphoneos.a", "libfmodstudio_iphoneos.a"])
+module_env.Append(CPPPATH=["#modules/fmod/api/core/inc", "#modules/fmod/api/studio/inc"])
+
+if env["platform"] == "iphone":
+    sys_exec(["cp", "api/core/lib/libfmod_iphoneos.a", "../../platform/iphone/libfmod_iphoneos.a"])
+    sys_exec(["cp", "api/studio/lib/libfmodstudio_iphoneos.a", "../../platform/iphone/libfmodstudio_iphoneos.a"])
